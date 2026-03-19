@@ -5,9 +5,11 @@ Thumbs.db
 # Python
 backend/venv/
 backend/__pycache__/
+**/__pycache__/
 backend/.pytest_cache/
 backend/.mypy_cache/
 backend/*.pyc
+*.py[cod]
 
 # Env files (secrets)
 backend/.env

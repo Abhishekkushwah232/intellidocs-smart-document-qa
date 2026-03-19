@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f6fb;
+  --foreground: #0f172a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Keep a consistent light theme for predictable readability in this assignment UI. */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Keep form text clearly readable regardless of page/theme classes */
+input,
+textarea,
+select {
+  background: #ffffff !important;
+  color: #0f172a !important; /* slate-900 */
+  caret-color: #0f172a !important;
+  border-color: #cbd5e1 !important; /* slate-300 */
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #475569 !important; /* slate-600 */
+  opacity: 1;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  .btn-primary {
+    @apply rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-50;
+  }
+
+  .btn-danger {
+    @apply rounded-md bg-rose-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-rose-700;
+  }
+}
