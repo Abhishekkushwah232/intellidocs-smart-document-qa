@@ -154,8 +154,7 @@ export default function ChatPage() {
               {result.sources.map((s) => (
                 <div key={s.chunk_id} className="rounded-lg border border-slate-300 bg-slate-50 p-3">
                   <p className="text-xs font-semibold text-slate-800">
-                    {s.filename} | page {s.page_number} | chunk {s.chunk_index} | similarity{" "}
-                    {s.similarity.toFixed(3)}
+                    {s.filename} | page {s.page_number} | similarity {s.similarity.toFixed(3)}
                   </p>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-900">{s.snippet}</p>
                 </div>
