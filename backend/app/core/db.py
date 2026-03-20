@@ -9,13 +9,20 @@ from psycopg_pool import ConnectionPool
 from app.core.config import settings
 
 
-pool = ConnectionPool(conninfo=settings.database_url, min_size=1, max_size=5)
+pool = ConnectionPool(
+    conninfo=settings.database_url,
+    min_size=1,
+    max_size=5,
+    open=False,
+    timeout=60.0,
+    kwargs={"sslmode": "require"},
+)
 
 
 def ensure_pool_started() -> None:
     # Safe to call multiple times; pool will no-op if already started.
     if not getattr(pool, "_started", False):
-        pool.open()
+        pool.open(wait=True, timeout=60.0)
         with pool.connection() as conn:
             register_vector(conn)
         pool._started = True
