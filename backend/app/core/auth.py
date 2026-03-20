@@ -35,6 +35,9 @@ def _verify_with_jwks(token: str) -> dict:
 
     unverified_header = jwt.get_unverified_header(token)
     alg = unverified_header.get("alg") or "RS256"
+    if str(alg).upper().startswith("HS"):
+        # JWKS only applies to asymmetric signatures; HS* tokens must be verified with the shared secret.
+        raise jwt.PyJWTError("Token appears to be signed with HS*; JWKS verification not applicable.")
 
     return jwt.decode(
         token,
@@ -52,14 +55,14 @@ def get_current_user(
 
     token = credentials.credentials
     try:
-        # Try HS256 first (classic Supabase JWT secret).
-        payload = _verify_with_hs256(token)
-    except jwt.PyJWTError:
-        # If that fails, try JWKS verification (RS256 keys).
         try:
+            # Prefer JWKS first (Supabase commonly uses RS256/rotating keys).
             payload = _verify_with_jwks(token)
         except jwt.PyJWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            # Fallback to HS256 (classic Supabase JWT secret).
+            payload = _verify_with_hs256(token)
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user_id = payload.get("sub")
     if not user_id:

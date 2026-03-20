@@ -51,7 +51,16 @@ def register(req: RegisterRequest):
         "Authorization": f"Bearer {settings.supabase_anon_key}",
         "Content-Type": "application/json",
     }
-    payload = {"email": req.email, "password": req.password}
+    # Tell Supabase where to send the user after clicking the email confirmation link.
+    # Must match Supabase Dashboard → Authentication → URL Configuration → Redirect URLs.
+    base = settings.frontend_url.rstrip("/")
+    payload = {
+        "email": req.email,
+        "password": req.password,
+        "options": {
+            "email_redirect_to": f"{base}/login",
+        },
+    }
     try:
         resp = requests.post(url, headers=headers, json=payload, timeout=30)
     except requests.RequestException as e:
