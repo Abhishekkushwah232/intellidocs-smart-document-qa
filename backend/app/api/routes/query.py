@@ -1,7 +1,7 @@
 """
 RAG query route: embed question, vector search over user chunks, LLM answer + sources.
 
-Includes provider fallbacks (Claude → OpenAI → Grok) and extractive fallback if all fail.
+Includes provider fallbacks (Gemini → Grok → Claude → OpenAI) and extractive fallback if all fail.
 """
 from __future__ import annotations
 
@@ -102,6 +102,44 @@ def _extractive_fallback_answer(question: str, retrieved: list[dict]) -> str:
         f"{snippet}\n\n"
         "This answer is extracted from the provided sources."
     )
+
+
+def _call_gemini(*, system_prompt: str, prompt: str) -> str:
+    """Generate answer via Google Gemini REST API (Google AI Studio key)."""
+    if not settings.gemini_api_key:
+        raise RuntimeError("GEMINI_API_KEY is not configured")
+
+    # v1beta generateContent — model name must match AI Studio / API (e.g. gemini-2.0-flash).
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{settings.gemini_model}:generateContent"
+    )
+    params = {"key": settings.gemini_api_key}
+    payload = {
+        "systemInstruction": {"parts": [{"text": system_prompt}]},
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 1024,
+        },
+    }
+    resp = requests.post(url, params=params, json=payload, timeout=120)
+    if resp.status_code >= 400:
+        raise RuntimeError(f"Gemini error {resp.status_code}: {resp.text[:800]}")
+    data = resp.json()
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise RuntimeError(f"Gemini returned no candidates: {data}")
+    parts = (candidates[0].get("content") or {}).get("parts") or []
+    texts: list[str] = []
+    for p in parts:
+        t = p.get("text")
+        if t:
+            texts.append(t)
+    out = "\n".join(texts).strip()
+    if not out:
+        raise RuntimeError("Gemini returned empty text")
+    return out
 
 
 def _call_grok(*, system_prompt: str, prompt: str) -> str:
@@ -328,8 +366,8 @@ def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current
     answer = ""
     llm_errors: list[str] = []
 
-    # Provider order uses llm_provider first, then other providers.
-    provider_order = [settings.llm_provider.lower(), "grok", "anthropic", "openai"]
+    # Provider order: user preference first, then sensible fallbacks.
+    provider_order = [settings.llm_provider.lower(), "gemini", "grok", "anthropic", "openai"]
     seen = set()
     ordered_unique = []
     for p in provider_order:
@@ -339,7 +377,9 @@ def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current
 
     for provider in ordered_unique:
         try:
-            if provider == "grok":
+            if provider == "gemini":
+                answer = _call_gemini(system_prompt=system_prompt, prompt=prompt)
+            elif provider == "grok":
                 answer = _call_grok(system_prompt=system_prompt, prompt=prompt)
             elif provider == "anthropic":
                 answer = _call_claude(system_prompt=system_prompt, prompt=prompt)

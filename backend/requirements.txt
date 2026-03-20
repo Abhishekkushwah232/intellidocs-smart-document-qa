@@ -13,3 +13,6 @@ pgvector==0.4.2
 # Optional: only needed if you switch back to Pydantic EmailStr fields.
 email-validator==2.3.0
 
+# Required when EMBEDDINGS_PROVIDER=local (384-dim MiniLM; avoids OpenAI embedding quota).
+sentence-transformers>=3.3.0
+

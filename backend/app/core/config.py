@@ -24,19 +24,22 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str | None = None
 
-    # Embeddings
-    # Use hosted embeddings by default (faster + fewer installation issues on Python 3.13)
-    embeddings_provider: str = "openai"  # "local" | "openai"
+    # Embeddings — default `local` (384-dim) matches pgvector without OpenAI embedding quota.
+    embeddings_provider: str = "local"  # "local" | "openai"
     embeddings_dim: int = 384
     embeddings_local_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     openai_api_key: str | None = None
 
-    # LLM
-    llm_provider: str = "grok"  # "grok" | "anthropic" | "openai"
+    # LLM — primary default: Google Gemini (set GEMINI_API_KEY). Fallbacks: grok, anthropic, openai.
+    llm_provider: str = "gemini"  # "gemini" | "grok" | "anthropic" | "openai"
     claude_model: str = "claude-sonnet-4-6"
     rag_top_k: int = 6
     # Fallback LLM if Anthropic fails (e.g., insufficient credits).
     openai_chat_model: str = "gpt-4o-mini"
+
+    # Google Gemini (Google AI Studio API key)
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.0-flash"
 
     # xAI Grok (useful when Anthropic/OpenAI quotas are exhausted).
     grok_api_key: str | None = None

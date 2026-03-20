@@ -30,7 +30,7 @@
 | **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS |
 | **Backend** | Python 3.13, FastAPI, Uvicorn |
 | **Data** | Supabase PostgreSQL + **pgvector**, Supabase Storage, Supabase Auth |
-| **AI** | OpenAI embeddings (384-dim), Grok / Anthropic / OpenAI for generation (configurable) |
+| **AI** | Embeddings: OpenAI or **local** sentence-transformers (384-dim, matches `pgvector`). Answers: **Gemini** (primary), then Grok / Anthropic / OpenAI fallbacks |
 | **Deploy** | Backend: Railway · Frontend: Vercel |
 
 ---
@@ -146,10 +146,11 @@ Copy from examples; **never commit** real `.env` files.
 | `JWT_SECRET` | Supabase JWT secret (HS256 path) |
 | `DATABASE_URL` | Postgres connection string (`sslmode=require` recommended) |
 | `FRONTEND_URL` | Public UI URL (email confirmation redirect + reference) |
-| `OPENAI_API_KEY` | Embeddings (and optional chat fallback) |
-| `LLM_PROVIDER` | `grok` \| `anthropic` \| `openai` |
-| `GROK_API_KEY` / `GROK_MODEL` | xAI Grok when `LLM_PROVIDER=grok` |
-| `EMBEDDINGS_PROVIDER` / `EMBEDDINGS_DIM` | Must match DB vector dimension (384) |
+| `OPENAI_API_KEY` | Optional: embeddings and/or chat fallback when quota allows |
+| `EMBEDDINGS_PROVIDER` / `EMBEDDINGS_DIM` | `openai` or **`local`** (384) — must match `pgvector` column; prefer **`local`** without OpenAI credits |
+| `LLM_PROVIDER` | `gemini` \| `grok` \| `anthropic` \| `openai` |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | Google AI Studio — primary generation when `LLM_PROVIDER=gemini` |
+| `GROK_API_KEY` / `GROK_MODEL` | xAI Grok fallback |
 
 See full template: [`backend/.env.example`](backend/.env.example).
 
