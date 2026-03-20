@@ -13,10 +13,11 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        # Include both production and local dev origin in case of mismatch.
-        # The frontend uses Authorization headers (no cookies), so credentials are optional.
-        allow_origins=[settings.frontend_url, "http://localhost:3000"],
-        allow_credentials=True,
+        # The frontend calls the API with an `Authorization: Bearer ...` header (no cookies).
+        # In production, allow all origins to avoid hard-to-debug origin-mismatch issues
+        # caused by environment variable formatting differences.
+        allow_origins=["*"],
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )
