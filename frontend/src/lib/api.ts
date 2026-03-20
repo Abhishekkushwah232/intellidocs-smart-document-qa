@@ -1,3 +1,7 @@
+/**
+ * Typed fetch helpers for the FastAPI backend.
+ * Base URL comes from Vercel env in production; defaults to local uvicorn in dev.
+ */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8001";
 
 export type AuthResponse = {
@@ -28,6 +32,7 @@ export type QueryResponse = {
   sources: SourceChunk[];
 };
 
+/** Parse JSON body, or fall back to plain text (avoids throw on empty/HTML errors). */
 async function parseJsonSafe(resp: Response): Promise<unknown> {
   try {
     return await resp.json();

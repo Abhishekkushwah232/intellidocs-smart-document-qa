@@ -1,3 +1,6 @@
+"""
+Document ingestion pipeline: extract text → chunk → embed → insert into `chunks` table.
+"""
 from __future__ import annotations
 
 import uuid

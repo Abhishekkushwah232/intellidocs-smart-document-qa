@@ -1,3 +1,7 @@
+/**
+ * Authenticated dashboard: upload PDF/TXT, list documents, link to chat / delete flow.
+ * Success banner: `/dashboard?deleted=1&filename=...` after confirmed delete (see delete page).
+ */
 "use client";
 
 import Link from "next/link";

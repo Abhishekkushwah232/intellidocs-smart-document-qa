@@ -9,6 +9,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Runtime configuration from environment / `.env` (see `backend/.env.example`)."""
+
     supabase_url: str
     supabase_anon_key: str
     supabase_service_key: str
@@ -40,6 +42,7 @@ class Settings(BaseSettings):
     grok_api_key: str | None = None
     grok_model: str = "grok-4-0709"
 
+    # Default for local/dev; override with FRONTEND_URL in production (Vercel URL).
     frontend_url: str = "https://intellidocs-smart-document-qa.vercel.app"
 
     # Upload constraints

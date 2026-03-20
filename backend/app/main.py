@@ -1,3 +1,9 @@
+"""
+FastAPI application entry: CORS, routers, health check.
+
+CORS is permissive (`*`) because the SPA uses `Authorization: Bearer` only
+(no cookies). Tighten `allow_origins` for production hardening if required.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

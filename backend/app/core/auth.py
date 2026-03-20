@@ -1,3 +1,9 @@
+"""
+JWT authentication for protected routes.
+
+Supabase may issue HS256 (JWT secret) or RS256 (JWKS) tokens.
+We try JWKS first, then fall back to HS256 so both setups work on Railway.
+"""
 from dataclasses import dataclass
 
 import jwt
@@ -16,6 +22,7 @@ class CurrentUser:
 _bearer = HTTPBearer(auto_error=False)
 
 def _verify_with_hs256(token: str) -> dict:
+    """Verify legacy / dashboard-style Supabase JWTs signed with the project JWT secret."""
     return jwt.decode(
         token,
         settings.jwt_secret,
@@ -50,6 +57,7 @@ def _verify_with_jwks(token: str) -> dict:
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> CurrentUser:
+    """FastAPI dependency: parse Bearer token and return `sub` + optional `email`."""
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 

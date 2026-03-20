@@ -1,3 +1,6 @@
+/**
+ * Explicit delete confirmation; on success redirects to dashboard with ?deleted=1 for banner.
+ */
 "use client";
 
 import Link from "next/link";

@@ -1,3 +1,8 @@
+"""
+Document routes: list, upload (storage + DB + ingestion), get, delete.
+
+Enforces per-user isolation via `get_current_user` on every handler.
+"""
 from __future__ import annotations
 
 import re

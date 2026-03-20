@@ -1,3 +1,9 @@
+"""
+Auth routes: proxy register/login to Supabase Auth REST API.
+
+Signup may return `requires_email_confirmation` when email verification is on;
+`email_redirect_to` points users back to the SPA after they confirm email.
+"""
 from __future__ import annotations
 
 import requests

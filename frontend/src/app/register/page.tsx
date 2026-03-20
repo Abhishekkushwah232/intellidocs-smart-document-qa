@@ -1,3 +1,4 @@
+/** Register: may require email confirmation per Supabase project settings. */
 "use client";
 
 import Link from "next/link";

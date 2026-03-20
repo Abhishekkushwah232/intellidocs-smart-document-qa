@@ -1,3 +1,4 @@
+/** Login: stores Supabase JWT in localStorage for API `Authorization` header. */
 "use client";
 
 import Link from "next/link";

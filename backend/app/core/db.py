@@ -1,3 +1,9 @@
+"""
+PostgreSQL connection pool for Supabase-hosted Postgres.
+
+Uses psycopg3 ConnectionPool with explicit SSL and longer timeouts so
+Railway / pooler connections do not fail or hang on cold start.
+"""
 from __future__ import annotations
 
 from typing import Any
@@ -8,7 +14,8 @@ from psycopg_pool import ConnectionPool
 
 from app.core.config import settings
 
-
+# Defer opening until first request: avoids import-time connection failures.
+# `wait=True` blocks until at least one connection is ready (up to timeout).
 pool = ConnectionPool(
     conninfo=settings.database_url,
     min_size=1,

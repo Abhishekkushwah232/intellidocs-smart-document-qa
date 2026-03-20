@@ -1,3 +1,6 @@
+/**
+ * RAG chat: pick a document, ask questions, show answer + cited source snippets.
+ */
 "use client";
 
 import Link from "next/link";

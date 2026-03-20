@@ -1,3 +1,6 @@
+"""
+Text embeddings: OpenAI (hosted) with retries / quota fallback, or local sentence-transformers.
+"""
 from __future__ import annotations
 
 from functools import lru_cache

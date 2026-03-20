@@ -1,3 +1,8 @@
+"""
+RAG query route: embed question, vector search over user chunks, LLM answer + sources.
+
+Includes provider fallbacks (Claude → OpenAI → Grok) and extractive fallback if all fail.
+"""
 from __future__ import annotations
 
 import json
