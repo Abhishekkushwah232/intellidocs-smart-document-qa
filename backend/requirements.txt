@@ -13,6 +13,9 @@ pgvector==0.4.2
 # Optional: only needed if you switch back to Pydantic EmailStr fields.
 email-validator==2.3.0
 
-# Required when EMBEDDINGS_PROVIDER=local (384-dim MiniLM; avoids OpenAI embedding quota).
+# Local embeddings: CPU-only PyTorch (no CUDA wheels — required for Railway build size/time).
+# Default pip torch pulls ~3GB+ nvidia-* packages and often hits CI timeouts.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.6.0,<3
 sentence-transformers>=3.3.0
 

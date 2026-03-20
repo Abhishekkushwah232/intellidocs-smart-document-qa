@@ -199,6 +199,7 @@ See: [`frontend/.env.example`](frontend/.env.example).
 - **Email link goes to localhost** — Supabase Auth → URL Configuration → set **Site URL** to production; ensure `FRONTEND_URL` matches.
 - **Bucket not found** — bucket names are **case-sensitive**; align `SUPABASE_STORAGE_BUCKET` with Supabase.
 - **DB timeouts** — use pooler-friendly settings; this repo uses `psycopg` `ConnectionPool` with SSL and longer open timeout (see `backend/app/core/db.py`).
+- **Railway “Build timed out” with `EMBEDDINGS_PROVIDER=local`** — default PyTorch pulls huge CUDA wheels. `requirements.txt` uses **CPU-only** PyTorch (`--extra-index-url https://download.pytorch.org/whl/cpu`). Redeploy after pulling latest; build logs should **not** list many `nvidia-*` packages.
 
 </details>
 

@@ -2,7 +2,7 @@
 
 ## 1. Local `backend/.env`
 
-Set (no quotes around the key unless your shell requires them):
+Set (no quotes around the key unless your shell requires them). **Each variable must be one line** (`KEY=value`):
 
 ```env
 GEMINI_API_KEY=<paste from Google AI Studio>
@@ -10,6 +10,8 @@ GEMINI_MODEL=gemini-2.0-flash
 LLM_PROVIDER=gemini
 EMBEDDINGS_PROVIDER=local
 ```
+
+If you see a stray line that is only `local`, fix it to `EMBEDDINGS_PROVIDER=local` on a single line.
 
 Restart Uvicorn after saving.
 
@@ -34,7 +36,9 @@ In the backend service → **Variables**, add or update:
 - `LLM_PROVIDER` = `gemini`
 - `EMBEDDINGS_PROVIDER` = `local`
 
-Then **Redeploy** so the new build installs `sentence-transformers` (first deploy can take several minutes).
+Then **Redeploy**. The repo pins **CPU-only PyTorch** (via PyTorch’s CPU wheel index) so Railway does not download multi‑GB CUDA packages — builds should finish within the timeout.
+
+If a deploy still times out, check build logs: you should **not** see large `nvidia-cuda-*` / `nvidia-cudnn-*` downloads.
 
 ## 4. Re-upload documents (important)
 
