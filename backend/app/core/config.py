@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import re
 from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -49,7 +50,10 @@ class Settings(BaseSettings):
     def _normalize_frontend_url(cls, v: object) -> str:
         # Railway env values sometimes include trailing whitespace/newlines and
         # can include a trailing slash, which would break exact CORS origin matching.
-        return str(v).strip().rstrip("/")
+        s = str(v)
+        # Remove whitespace anywhere in the string (Railway UI may wrap values with hidden newlines).
+        s = re.sub(r"\s+", "", s)
+        return s.strip().rstrip("/")
 
     model_config = SettingsConfigDict(extra="ignore")
 

@@ -13,7 +13,9 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[settings.frontend_url],
+        # Include both production and local dev origin in case of mismatch.
+        # The frontend uses Authorization headers (no cookies), so credentials are optional.
+        allow_origins=[settings.frontend_url, "http://localhost:3000"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
