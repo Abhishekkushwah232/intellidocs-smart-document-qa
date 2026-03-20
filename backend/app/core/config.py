@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from dotenv import load_dotenv
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,10 +39,17 @@ class Settings(BaseSettings):
     grok_api_key: str | None = None
     grok_model: str = "grok-4-0709"
 
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str = "https://intellidocs-smart-document-qa.vercel.app"
 
     # Upload constraints
     max_upload_mb: int = 10
+
+    @field_validator("frontend_url", mode="before")
+    @classmethod
+    def _normalize_frontend_url(cls, v: object) -> str:
+        # Railway env values sometimes include trailing whitespace/newlines and
+        # can include a trailing slash, which would break exact CORS origin matching.
+        return str(v).strip().rstrip("/")
 
     model_config = SettingsConfigDict(extra="ignore")
 
