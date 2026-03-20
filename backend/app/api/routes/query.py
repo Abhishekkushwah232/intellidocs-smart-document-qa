@@ -1,7 +1,7 @@
 """
 RAG query route: embed question, vector search over user chunks, LLM answer + sources.
 
-Includes provider fallbacks (Gemini → Grok → Claude → OpenAI) and extractive fallback if all fail.
+Uses Google Gemini for generation when GEMINI_API_KEY is set; otherwise extractive fallback from retrieved chunks.
 """
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ from app.core.config import settings
 from app.core.db import ensure_pool_started, pool
 from app.services.embeddings import embed_texts
 
-from anthropic import Anthropic
 import requests
 
 
@@ -140,63 +139,6 @@ def _call_gemini(*, system_prompt: str, prompt: str) -> str:
     if not out:
         raise RuntimeError("Gemini returned empty text")
     return out
-
-
-def _call_grok(*, system_prompt: str, prompt: str) -> str:
-    if not settings.grok_api_key:
-        raise RuntimeError("GROK_API_KEY is not configured")
-
-    url = "https://api.x.ai/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {settings.grok_api_key}"}
-    payload = {
-        "model": settings.grok_model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ],
-        "max_tokens": 600,
-        "temperature": 0.2,
-    }
-    resp = requests.post(url, headers=headers, json=payload, timeout=90)
-    resp.raise_for_status()
-    data = resp.json()
-    return data["choices"][0]["message"]["content"]
-
-
-def _call_claude(*, system_prompt: str, prompt: str) -> str:
-    if not settings.anthropic_api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not configured")
-
-    client = Anthropic(api_key=settings.anthropic_api_key)
-    msg = client.messages.create(
-        model=settings.claude_model,
-        max_tokens=600,
-        system=system_prompt,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return msg.content[0].text if msg.content else ""
-
-
-def _call_openai(*, system_prompt: str, prompt: str) -> str:
-    if not settings.openai_api_key:
-        raise RuntimeError("OPENAI_API_KEY is not configured")
-
-    openai_url = "https://api.openai.com/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {settings.openai_api_key}"}
-    payload = {
-        "model": settings.openai_chat_model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ],
-        "max_tokens": 600,
-        "temperature": 0.2,
-    }
-    resp = requests.post(openai_url, headers=headers, json=payload, timeout=90)
-    if resp.status_code >= 400:
-        raise RuntimeError(f"OpenAI response error: {resp.text}")
-    data = resp.json()
-    return data["choices"][0]["message"]["content"]
 
 
 @router.post("", response_model=QueryResponse)
@@ -364,34 +306,10 @@ def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current
     )
 
     answer = ""
-    llm_errors: list[str] = []
-
-    # Provider order: user preference first, then sensible fallbacks.
-    provider_order = [settings.llm_provider.lower(), "gemini", "grok", "anthropic", "openai"]
-    seen = set()
-    ordered_unique = []
-    for p in provider_order:
-        if p not in seen:
-            seen.add(p)
-            ordered_unique.append(p)
-
-    for provider in ordered_unique:
-        try:
-            if provider == "gemini":
-                answer = _call_gemini(system_prompt=system_prompt, prompt=prompt)
-            elif provider == "grok":
-                answer = _call_grok(system_prompt=system_prompt, prompt=prompt)
-            elif provider == "anthropic":
-                answer = _call_claude(system_prompt=system_prompt, prompt=prompt)
-            elif provider == "openai":
-                answer = _call_openai(system_prompt=system_prompt, prompt=prompt)
-            else:
-                continue
-            if answer and answer.strip():
-                break
-        except Exception as e:
-            llm_errors.append(f"{provider}: {e}")
-            continue
+    try:
+        answer = _call_gemini(system_prompt=system_prompt, prompt=prompt)
+    except Exception:
+        answer = ""
 
     if not answer.strip():
         # Last-resort fallback so API remains functional for demo.

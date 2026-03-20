@@ -23,22 +23,17 @@ _log = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Log AI config at startup (no secrets). Helps verify Railway/.env after adding Gemini."""
-    prov = settings.llm_provider.lower()
-    if prov == "gemini":
-        if settings.gemini_api_key:
-            _log.info("IntelliDocs: LLM primary=gemini model=%s", settings.gemini_model)
-        else:
-            _log.warning(
-                "IntelliDocs: LLM_PROVIDER=gemini but GEMINI_API_KEY is empty — "
-                "will try fallbacks (grok/anthropic/openai) or extractive answer."
-            )
+    """Log AI config at startup (no secrets)."""
+    if settings.gemini_api_key:
+        _log.info("IntelliDocs: LLM=gemini model=%s", settings.gemini_model)
     else:
-        _log.info("IntelliDocs: LLM primary=%s", prov)
+        _log.warning(
+            "IntelliDocs: GEMINI_API_KEY is empty — answers will use extractive fallback from chunks only."
+        )
     _log.info(
-        "IntelliDocs: embeddings provider=%s dim=%s",
-        settings.embeddings_provider,
+        "IntelliDocs: embeddings=local dim=%s model=%s",
         settings.embeddings_dim,
+        settings.embeddings_local_model,
     )
     yield
 

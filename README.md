@@ -19,7 +19,7 @@
 | **Auth** | Register / login via Supabase Auth; JWT verified on every protected API call |
 | **Documents** | Upload PDF/TXT → chunk → embed → store in `pgvector`; list & delete with confirmation |
 | **Chat** | Ask questions scoped to your documents; answers with **cited snippets** (filename, page, similarity) |
-| **Resilience** | Embedding & LLM fallbacks when provider quotas fail; DB pool tuned for hosted Postgres |
+| **Resilience** | Extractive answer fallback if Gemini fails; DB pool tuned for hosted Postgres |
 
 ---
 
@@ -30,7 +30,7 @@
 | **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS |
 | **Backend** | Python 3.13, FastAPI, Uvicorn |
 | **Data** | Supabase PostgreSQL + **pgvector**, Supabase Storage, Supabase Auth |
-| **AI** | Embeddings: OpenAI or **local** sentence-transformers (384-dim, matches `pgvector`). Answers: **Gemini** (primary), then Grok / Anthropic / OpenAI fallbacks |
+| **AI** | Embeddings: **local** sentence-transformers / MiniLM (384-dim). Answers: **Google Gemini** only (no other LLM APIs) |
 | **Deploy** | Backend: Railway · Frontend: Vercel |
 
 ---
@@ -146,15 +146,13 @@ Copy from examples; **never commit** real `.env` files.
 | `JWT_SECRET` | Supabase JWT secret (HS256 path) |
 | `DATABASE_URL` | Postgres connection string (`sslmode=require` recommended) |
 | `FRONTEND_URL` | Public UI URL (email confirmation redirect + reference) |
-| `OPENAI_API_KEY` | Optional: embeddings and/or chat fallback when quota allows |
-| `EMBEDDINGS_PROVIDER` / `EMBEDDINGS_DIM` | `openai` or **`local`** (384) — must match `pgvector` column; prefer **`local`** without OpenAI credits |
-| `LLM_PROVIDER` | `gemini` \| `grok` \| `anthropic` \| `openai` |
-| `GEMINI_API_KEY` / `GEMINI_MODEL` | Google AI Studio — primary generation when `LLM_PROVIDER=gemini` |
-| `GROK_API_KEY` / `GROK_MODEL` | xAI Grok fallback |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | **Only** paid LLM API — Google AI Studio (answers). If empty, answers use extractive text from retrieved chunks. |
+| `EMBEDDINGS_PROVIDER` / `EMBEDDINGS_DIM` | Must be **`local`** and **`384`** (MiniLM on CPU; matches `pgvector`). OpenAI embedding mode is not supported in this build. |
+| `MAX_UPLOAD_MB` | Optional upload size cap (default 10) |
 
 See full template: [`backend/.env.example`](backend/.env.example).
 
-**Gemini + local embeddings:** step-by-step checklist → [`docs/GEMINI_AND_EMBEDDINGS.md`](docs/GEMINI_AND_EMBEDDINGS.md).
+**Gemini-only LLM + local embeddings:** checklist → [`docs/GEMINI_AND_EMBEDDINGS.md`](docs/GEMINI_AND_EMBEDDINGS.md).
 
 ### Frontend (`frontend/.env.local`)
 

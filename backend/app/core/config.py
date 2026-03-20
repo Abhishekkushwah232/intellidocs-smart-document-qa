@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Runtime configuration from environment / `.env` (see `backend/.env.example`)."""
+    """Runtime configuration from environment / `.env` — see `backend/.env.example` (Gemini + local embeddings only)."""
 
     supabase_url: str
     supabase_anon_key: str
@@ -22,28 +22,16 @@ class Settings(BaseSettings):
     # Postgres connection string (Supabase Dashboard > Database > Connection string)
     database_url: str
 
-    anthropic_api_key: str | None = None
-
-    # Embeddings — default `local` (384-dim) matches pgvector without OpenAI embedding quota.
-    embeddings_provider: str = "local"  # "local" | "openai"
+    # Embeddings: local sentence-transformers only (384-dim; no paid embedding API).
+    embeddings_provider: str = "local"
     embeddings_dim: int = 384
     embeddings_local_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    openai_api_key: str | None = None
 
-    # LLM — primary default: Google Gemini (set GEMINI_API_KEY). Fallbacks: grok, anthropic, openai.
-    llm_provider: str = "gemini"  # "gemini" | "grok" | "anthropic" | "openai"
-    claude_model: str = "claude-sonnet-4-6"
     rag_top_k: int = 6
-    # Fallback LLM if Anthropic fails (e.g., insufficient credits).
-    openai_chat_model: str = "gpt-4o-mini"
 
-    # Google Gemini (Google AI Studio API key)
+    # Answer generation: Google Gemini only (Google AI Studio API key).
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.0-flash"
-
-    # xAI Grok (useful when Anthropic/OpenAI quotas are exhausted).
-    grok_api_key: str | None = None
-    grok_model: str = "grok-4-0709"
 
     # Default for local/dev; override with FRONTEND_URL in production (Vercel URL).
     frontend_url: str = "https://intellidocs-smart-document-qa.vercel.app"
@@ -60,6 +48,17 @@ class Settings(BaseSettings):
         # Remove whitespace anywhere in the string (Railway UI may wrap values with hidden newlines).
         s = re.sub(r"\s+", "", s)
         return s.strip().rstrip("/")
+
+    @field_validator("embeddings_provider", mode="before")
+    @classmethod
+    def _embeddings_local_only(cls, v: object) -> str:
+        s = str(v).strip().lower()
+        if s != "local":
+            raise ValueError(
+                "This build only supports EMBEDDINGS_PROVIDER=local (no OpenAI embedding API). "
+                "Remove EMBEDDINGS_PROVIDER=openai from your environment or set it to local."
+            )
+        return "local"
 
     @field_validator("database_url", mode="before")
     @classmethod
