@@ -55,6 +55,18 @@ class Settings(BaseSettings):
         s = re.sub(r"\s+", "", s)
         return s.strip().rstrip("/")
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _ensure_sslmode(cls, v: object) -> str:
+        # Supabase requires SSL in hosted environments; if a pasted connection
+        # string is missing sslmode, Postgres connections will fail at runtime.
+        s = str(v).strip()
+        if "sslmode=" in s.lower():
+            return s
+        if "?" in s:
+            return f"{s}&sslmode=require"
+        return f"{s}?sslmode=require"
+
     model_config = SettingsConfigDict(extra="ignore")
 
 def _pick_env_path() -> Path:
