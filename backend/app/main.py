@@ -4,6 +4,11 @@ FastAPI application entry: CORS, routers, health check.
 CORS is permissive (`*`) because the SPA uses `Authorization: Bearer` only
 (no cookies). Tighten `allow_origins` for production hardening if required.
 """
+from __future__ import annotations
+
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,9 +18,33 @@ from app.api.routes.query import router as query_router
 
 from app.core.config import settings
 
+_log = logging.getLogger("uvicorn.error")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Log AI config at startup (no secrets). Helps verify Railway/.env after adding Gemini."""
+    prov = settings.llm_provider.lower()
+    if prov == "gemini":
+        if settings.gemini_api_key:
+            _log.info("IntelliDocs: LLM primary=gemini model=%s", settings.gemini_model)
+        else:
+            _log.warning(
+                "IntelliDocs: LLM_PROVIDER=gemini but GEMINI_API_KEY is empty — "
+                "will try fallbacks (grok/anthropic/openai) or extractive answer."
+            )
+    else:
+        _log.info("IntelliDocs: LLM primary=%s", prov)
+    _log.info(
+        "IntelliDocs: embeddings provider=%s dim=%s",
+        settings.embeddings_provider,
+        settings.embeddings_dim,
+    )
+    yield
+
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="IntelliDocs API")
+    app = FastAPI(title="IntelliDocs API", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,

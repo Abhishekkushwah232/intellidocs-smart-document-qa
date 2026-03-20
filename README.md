@@ -154,6 +154,8 @@ Copy from examples; **never commit** real `.env` files.
 
 See full template: [`backend/.env.example`](backend/.env.example).
 
+**Gemini + local embeddings:** step-by-step checklist → [`docs/GEMINI_AND_EMBEDDINGS.md`](docs/GEMINI_AND_EMBEDDINGS.md).
+
 ### Frontend (`frontend/.env.local`)
 
 | Variable | Purpose |
