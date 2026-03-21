@@ -119,10 +119,10 @@ async def upload_documents(
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    insert into documents (id, user_id, filename, storage_path, status, content)
-                    values (%s, %s, %s, %s, %s, %s)
+                    insert into documents (id, user_id, filename, storage_path, status)
+                    values (%s, %s, %s, %s, %s)
                     """,
-                    (str(doc_id), current_user.user_id, safe_name, storage_path, "processing", ""),
+                    (str(doc_id), current_user.user_id, safe_name, storage_path, "processing"),
                 )
             conn.commit()
 
