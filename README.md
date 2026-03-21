@@ -28,7 +28,7 @@
 | Layer | Choice |
 |-------|--------|
 | **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS |
-| **Backend** | Python 3.12+, FastAPI, Uvicorn |
+| **Backend** | Python 3.13, FastAPI, Uvicorn |
 | **Data** | Supabase PostgreSQL + **pgvector**, Supabase Storage, Supabase Auth |
 | **AI** | Embeddings: **local** sentence-transformers / MiniLM (384-dim). Answers: **Google Gemini** only (no other LLM APIs) |
 | **Deploy** | Backend: Railway · Frontend: Vercel |
@@ -56,8 +56,6 @@
 ---
 
 ## Architecture
-
-**Deep dive (what each part does, end-to-end flows):** [`docs/PROJECT.md`](docs/PROJECT.md).
 
 Click the diagram to expand in GitHub — **Mermaid renders interactively** in the repo view.
 
@@ -100,7 +98,7 @@ flowchart LR
 ### Prerequisites
 
 - **Node.js** 20+ (you used v24 — OK)
-- **Python** 3.12+ (Railway deploy is pinned via `backend/.python-version`)
+- **Python** 3.13
 - Supabase project with: Auth enabled, Storage bucket, DB tables + `pgvector` (as in your assignment SQL)
 
 ### 1. Backend
