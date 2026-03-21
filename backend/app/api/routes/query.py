@@ -6,8 +6,9 @@ Uses Google Gemini for generation when GEMINI_API_KEY is set; otherwise extracti
 from __future__ import annotations
 
 import json
+import logging
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -21,6 +22,7 @@ import requests
 
 
 router = APIRouter()
+_log = logging.getLogger(__name__)
 
 
 class QueryRequest(BaseModel):
@@ -44,6 +46,8 @@ class QueryResponse(BaseModel):
     conversation_id: str
     answer: str
     sources: list[SourceChunkOut]
+    # Populated only when RAG_DEBUG=1 (see `debug` in response_model_exclude_none).
+    debug: Optional[dict[str, Any]] = None
 
 
 def _truncate(s: str, n: int) -> str:
@@ -141,7 +145,7 @@ def _call_gemini(*, system_prompt: str, prompt: str) -> str:
     return out
 
 
-@router.post("", response_model=QueryResponse)
+@router.post("", response_model=QueryResponse, response_model_exclude_none=True)
 def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current_user)):
     ensure_pool_started()
 
@@ -276,6 +280,12 @@ def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current
         conn.commit()
 
     if not retrieved:
+        _log.warning(
+            "rag_query: no chunks retrieved user=%s document_id=%s question_len=%d",
+            current_user.user_id,
+            document_id,
+            len(question),
+        )
         # Reliable fallback path (AI integration rubric)
         with pool.connection() as conn:
             with conn.cursor() as cur:
@@ -288,7 +298,17 @@ def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current
                 )
             conn.commit()
 
-        return QueryResponse(conversation_id=conv_id, answer="I don't know.", sources=[])
+        dbg = (
+            {
+                "chunks_retrieved": 0,
+                "reason": "no_matching_chunks",
+                "document_id_filter": document_id,
+                "hint": "Document not ready, no embeddings, wrong user, or PDF had no extractable text in first pages.",
+            }
+            if settings.rag_debug
+            else None
+        )
+        return QueryResponse(conversation_id=conv_id, answer="I don't know.", sources=[], debug=dbg)
 
     context = _build_context(retrieved)
     context = _truncate(context, 12000)  # keep prompt size bounded
@@ -305,15 +325,33 @@ def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current
         "Answer:"
     )
 
+    top_sims = [float(r["similarity"]) for r in retrieved]
+    _log.info(
+        "rag_query: retrieved=%d top_sim=%.4f document_id=%s user=%s",
+        len(retrieved),
+        top_sims[0] if top_sims else 0.0,
+        document_id,
+        current_user.user_id,
+    )
+
     answer = ""
+    gemini_error: str | None = None
     try:
         answer = _call_gemini(system_prompt=system_prompt, prompt=prompt)
-    except Exception:
+    except Exception as e:
+        gemini_error = f"{type(e).__name__}: {e}"
+        _log.warning("rag_query: Gemini failed, using extractive fallback — %s", gemini_error)
         answer = ""
 
+    answer_source = "gemini"
     if not answer.strip():
         # Last-resort fallback so API remains functional for demo.
+        answer_source = "extractive"
         answer = _extractive_fallback_answer(question, retrieved)
+        _log.info(
+            "rag_query: answer_source=extractive gemini_error=%r",
+            gemini_error,
+        )
 
     sources_out: list[SourceChunkOut] = []
     source_payload = []
@@ -351,5 +389,20 @@ def query_rag(req: QueryRequest, current_user: CurrentUser = Depends(get_current
             )
         conn.commit()
 
-    return QueryResponse(conversation_id=conv_id, answer=answer, sources=sources_out)
+    dbg = None
+    if settings.rag_debug:
+        dbg = {
+            "chunks_retrieved": len(retrieved),
+            "top_similarities": [round(s, 4) for s in top_sims[:8]],
+            "answer_source": answer_source,
+            "gemini_model": settings.gemini_model,
+            "gemini_configured": bool(settings.gemini_api_key),
+            "gemini_error": gemini_error,
+            "embeddings_model": settings.embeddings_local_model,
+            "context_chars": len(context),
+            "document_id_filter": document_id,
+            "top_chunk_preview": _truncate(retrieved[0].get("content", "") or "", 400),
+        }
+
+    return QueryResponse(conversation_id=conv_id, answer=answer, sources=sources_out, debug=dbg)
 

@@ -30,6 +30,8 @@ export type QueryResponse = {
   conversation_id: string;
   answer: string;
   sources: SourceChunk[];
+  /** Present when backend has RAG_DEBUG=1 */
+  debug?: Record<string, unknown>;
 };
 
 /** Parse JSON body, or fall back to plain text (avoids throw on empty/HTML errors). */

@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # Upload constraints
     max_upload_mb: int = 10
 
+    # Set RAG_DEBUG=1 locally to include a `debug` object on POST /query responses.
+    rag_debug: bool = False
+
     @field_validator("frontend_url", mode="before")
     @classmethod
     def _normalize_frontend_url(cls, v: object) -> str:
@@ -48,6 +51,16 @@ class Settings(BaseSettings):
         # Remove whitespace anywhere in the string (Railway UI may wrap values with hidden newlines).
         s = re.sub(r"\s+", "", s)
         return s.strip().rstrip("/")
+
+    @field_validator("rag_debug", mode="before")
+    @classmethod
+    def _coerce_rag_debug(cls, v: object) -> bool:
+        if v is None or v == "":
+            return False
+        if isinstance(v, bool):
+            return v
+        s = str(v).strip().lower()
+        return s in ("1", "true", "yes", "on")
 
     @field_validator("embeddings_provider", mode="before")
     @classmethod

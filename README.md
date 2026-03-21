@@ -152,7 +152,8 @@ Copy from examples; **never commit** real `.env` files.
 
 See full template: [`backend/.env.example`](backend/.env.example).
 
-**Gemini-only LLM + local embeddings:** checklist → [`docs/GEMINI_AND_EMBEDDINGS.md`](docs/GEMINI_AND_EMBEDDINGS.md).
+**Gemini-only LLM + local embeddings:** checklist → [`docs/GEMINI_AND_EMBEDDINGS.md`](docs/GEMINI_AND_EMBEDDINGS.md).  
+**Wrong answers locally?** → [`docs/DEBUGGING_LOCAL.md`](docs/DEBUGGING_LOCAL.md) (`RAG_DEBUG=1` + Uvicorn logs).
 
 ### Frontend (`frontend/.env.local`)
 
